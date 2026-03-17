@@ -45,15 +45,32 @@ const AdminLayout = () => {
         setMobileSidebarOpen(false);
     }, [location]);
 
-    const menuItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: FiHome, path: '/' },
-        { id: 'analytics', label: 'Analytics', icon: FiBarChart2, path: '/analytics' },
-        { id: 'users', label: 'Users', icon: FiUsers, path: '/users' },
-        { id: 'calendar', label: 'Calendar', icon: FiCalendar, path: '/calendar' },
-        { id: 'messages', label: 'Messages', icon: FiMail, path: '/messages', badge: 3 },
-        { id: 'reports', label: 'Reports', icon: FiPieChart, path: '/reports' },
-        { id: 'settings', label: 'Settings', icon: FiSettings, path: '/settings' },
-    ];
+const menuItems = [
+    { 
+        id: 'dashboard', 
+        label: 'Dashboard', 
+        icon: FiHome, 
+        path: '/admin/dashboard' 
+    },
+    { 
+        id: 'category', 
+        label: 'Create Category', 
+        icon: FiPieChart, 
+        path: '/admin/create-category' 
+    },
+    { 
+        id: 'cupon', 
+        label: 'Cupon Code', 
+        icon: FiCalendar, 
+        path: '/admin/cupon-code' 
+    },
+    { 
+        id: 'users', 
+        label: 'Users', 
+        icon: FiUsers, 
+        path: '/admin/users' 
+    },
+];
 
     const sidebarVariants = {
         open: {

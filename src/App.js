@@ -100,6 +100,8 @@ import MyOrders from "./components/myOrders/MyOrders";
 import UpdateProfile from "./components/updateProfile/UpdateProfile";
 import Offers from "./pages/Offers";
 import AdminDashboard from "./components/admin-dashboard/admin-dashboard";
+import AdminHome from "./components/admin-dashboard/admin-home";
+import CreateCategory from "./components/admin-dashboard/create-category";
 
 function App() {
   let [isOpenRegister, setIsOpenRegister] = useState(false);
@@ -134,9 +136,9 @@ function App() {
         </Route>
 
         <Route path="admin" element={<AdminDashboard />}>
-          <Route path="dashboard" element={<div>Admin Summary</div>} />
-          <Route path="products" element={<div>Manage Products</div>} />
-          <Route path="orders" element={<div>Manage Orders</div>} />
+          <Route path="dashboard" element={<AdminHome></AdminHome>} />
+          <Route path="create-category" element={<CreateCategory></CreateCategory>} />
+          <Route path="cupon-code" element={<div>Manage Cupon Codes</div>} />
           <Route path="users" element={<div>Manage Users</div>} />
         </Route>
 

@@ -1,34 +1,54 @@
-import React from 'react';
 import { useForm } from '@tanstack/react-form';
 import { motion } from 'framer-motion';
-import { LayoutGrid, Layers, Image as ImageIcon, Send } from 'lucide-react';
+import { Image as ImageIcon, Layers, LayoutGrid, Send } from 'lucide-react';
+import api from '../../lib/api';
 
 const CreateCategory = () => {
     const API_URL = import.meta.env.VITE_API_URL;
 
+    console.log(API_URL)
+
     const form = useForm({
         defaultValues: {
             name: '',
-            subcategory: '',
-            icons: '',
+            subCategories: '',
+            iconFile: null,
+            iconUrl: '',
         },
         onSubmit: async ({ value }) => {
             try {
-                const response = await fetch(`${API_URL}/categories`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(value),
-                });
-                
-                if (response.ok) {
+                let subCategoriesPayload = undefined;
+                if (typeof value.subCategories === 'string' && value.subCategories.trim() !== '') {
+                    subCategoriesPayload = value.subCategories
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                        .map((name) => ({ name }));
+                }
+
+                const formData = new FormData();
+                formData.append('name', String(value.name || ''));
+                if (subCategoriesPayload !== undefined) {
+                    formData.append('subCategories', JSON.stringify(subCategoriesPayload));
+                }
+                if (value.iconFile instanceof File) {
+                    formData.append('icon', value.iconFile);
+                } else if (typeof value.iconUrl === 'string' && value.iconUrl.trim() !== '') {
+                    formData.append('iconUrl', value.iconUrl.trim());
+                }
+
+                // use axios instance
+                try {
+                    await api.post('/categories', formData);
                     alert('Category created successfully!');
                     form.reset();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error: ${errorData.message || 'Something went wrong'}`);
+                } catch (err) {
+                    console.error('Submission Error:', err);
+                    alert(`Error: ${err?.message || 'Something went wrong'}`);
                 }
             } catch (error) {
                 console.error('Submission Error:', error);
+                alert('Submission failed. See console for details.');
             }
         },
     });
@@ -69,12 +89,12 @@ const CreateCategory = () => {
                 />
 
                 <form.Field
-                    name="subcategory"
+                    name="subCategories"
                     children={(field) => (
                         <div className="space-y-2">
                             <label className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-widest">
                                 <Layers size={14} className="text-emerald-600" />
-                                Subcategory
+                                Subcategories (comma separated)
                             </label>
                             <input
                                 name={field.name}
@@ -88,25 +108,39 @@ const CreateCategory = () => {
                     )}
                 />
 
-                <form.Field
-                    name="icons"
-                    children={(field) => (
-                        <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-widest">
-                                <ImageIcon size={14} className="text-emerald-600" />
-                                Icon URL
-                            </label>
+                <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-widest">
+                        <ImageIcon size={14} className="text-emerald-600" />
+                        Icon Upload (or enter URL below)
+                    </label>
+                    <form.Field
+                        name="iconFile"
+                        children={(field) => (
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const f = e.target.files && e.target.files[0];
+                                    field.handleChange(f || null);
+                                }}
+                                className="w-full"
+                            />
+                        )}
+                    />
+                    <form.Field
+                        name="iconUrl"
+                        children={(field) => (
                             <input
                                 name={field.name}
                                 value={field.state.value}
                                 onBlur={field.handleBlur}
                                 onChange={(e) => field.handleChange(e.target.value)}
-                                placeholder="e.g. https://image-link.com"
+                                placeholder="Provide image URL e.g. https://image-link.com (used if no file)"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-bold text-sm"
                             />
-                        </div>
-                    )}
-                />
+                        )}
+                    />
+                </div>
 
                 <motion.button
                     whileHover={{ scale: 1.01 }}

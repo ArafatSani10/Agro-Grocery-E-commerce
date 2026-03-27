@@ -102,6 +102,7 @@ import Offers from "./pages/Offers";
 import AdminDashboard from "./components/admin-dashboard/admin-dashboard";
 import AdminHome from "./components/admin-dashboard/admin-home";
 import CreateCategory from "./components/admin-dashboard/create-category";
+import ManageCategory from "./components/admin-dashboard/manage-category";
 
 function App() {
   let [isOpenRegister, setIsOpenRegister] = useState(false);
@@ -138,6 +139,7 @@ function App() {
         <Route path="admin" element={<AdminDashboard />}>
           <Route path="dashboard" element={<AdminHome></AdminHome>} />
           <Route path="create-category" element={<CreateCategory></CreateCategory>} />
+          <Route path="manage-category" element={<ManageCategory></ManageCategory>} />
           <Route path="cupon-code" element={<div>Manage Cupon Codes</div>} />
           <Route path="users" element={<div>Manage Users</div>} />
         </Route>

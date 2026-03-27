@@ -59,6 +59,12 @@ const menuItems = [
         path: '/admin/create-category' 
     },
     { 
+        id: 'manage-category', 
+        label: 'Manage Category', 
+        icon: FiPieChart, 
+        path: '/admin/manage-category' 
+    },
+    { 
         id: 'cupon', 
         label: 'Cupon Code', 
         icon: FiCalendar, 

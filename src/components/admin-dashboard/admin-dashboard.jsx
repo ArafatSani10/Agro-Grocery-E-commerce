@@ -64,6 +64,20 @@ const menuItems = [
         icon: FiPieChart, 
         path: '/admin/manage-category' 
     },
+
+    { 
+        id: 'Create Products', 
+        label: 'Create Products', 
+        icon: FiPieChart, 
+        path: '/admin/create-products' 
+    },
+
+    { 
+        id: 'manage-products', 
+        label: 'Manage Products', 
+        icon: FiPieChart, 
+        path: '/admin/manage-products' 
+    },
     { 
         id: 'cupon', 
         label: 'Cupon Code', 

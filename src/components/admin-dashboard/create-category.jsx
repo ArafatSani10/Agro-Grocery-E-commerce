@@ -1,13 +1,13 @@
+
+
 import { useForm } from '@tanstack/react-form';
-import { motion } from 'framer-motion';
-import { Image as ImageIcon, Layers, LayoutGrid, Send, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Image as ImageIcon, Layers, LayoutGrid, Send, X, PlusCircle, CloudUpload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../../lib/api';
 
 const CreateCategory = () => {
-    const API_URL = import.meta.env.VITE_API_URL;
-
     const [loading, setLoading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [iconFileState, setIconFileState] = useState(null);
@@ -22,7 +22,6 @@ const CreateCategory = () => {
             iconUrl: '',
         },
         onSubmit: async ({ value }) => {
-            // Basic client-side validation
             if (!value.name || String(value.name).trim() === '') {
                 toast.error('Category name is required');
                 return;
@@ -54,8 +53,9 @@ const CreateCategory = () => {
                 toast.success('Category created successfully');
                 form.reset();
                 setPreviewUrl(null);
+                setIconFileState(null);
+                setIconUrlState('');
             } catch (err) {
-                console.error('Submission Error:', err);
                 const message = err?.response?.data?.message || err?.message || 'Something went wrong';
                 toast.error(message);
             } finally {
@@ -64,53 +64,38 @@ const CreateCategory = () => {
         },
     });
 
-    // manage preview URL and revoke object URLs when necessary
     useEffect(() => {
-        // if iconFileState is a File, create object URL
         if (iconFileState instanceof File) {
             const obj = URL.createObjectURL(iconFileState);
-            // revoke previous
-            if (objectUrlRef.current) {
-                try { URL.revokeObjectURL(objectUrlRef.current); } catch (e) {}
-            }
+            if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
             objectUrlRef.current = obj;
             setPreviewUrl(obj);
-            return () => {
-                try { URL.revokeObjectURL(obj); } catch (e) {}
-                if (objectUrlRef.current === obj) objectUrlRef.current = null;
-            };
+            return () => URL.revokeObjectURL(obj);
         }
 
-        // otherwise use iconUrlState or clear
         if (typeof iconUrlState === 'string' && iconUrlState.trim() !== '') {
-            // clear previous object URL if any
-            if (objectUrlRef.current) {
-                try { URL.revokeObjectURL(objectUrlRef.current); } catch (e) {}
-                objectUrlRef.current = null;
-            }
+            if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
             setPreviewUrl(iconUrlState.trim());
         } else {
-            if (objectUrlRef.current) {
-                try { URL.revokeObjectURL(objectUrlRef.current); } catch (e) {}
-                objectUrlRef.current = null;
-            }
             setPreviewUrl(null);
         }
-        // cleanup on unmount
-        return () => {
-            if (objectUrlRef.current) {
-                try { URL.revokeObjectURL(objectUrlRef.current); } catch (e) {}
-                objectUrlRef.current = null;
-            }
-        };
     }, [iconFileState, iconUrlState]);
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <Toaster position="top-right" />
-            <div className="mb-6">
-                <h1 className="text-3xl font-extrabold text-slate-800">Create New Category</h1>
-                <p className="text-sm text-slate-500 mt-1">Create and manage categories for the store.</p>
+        <div className="max-w-full mx-auto p-4 lg:p-4">
+            <Toaster position="top-center" reverseOrder={false} />
+            
+            {/* Header Section */}
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-2xl font-semibold text-slate-800 tracking-tight">Add New Category</h1>
+                    <p className="text-slate-500 text-sm mt-1">Organize your products by creating descriptive categories.</p>
+                </div>
+                {/* <div className="hidden md:block">
+                    <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2">
+                        <PlusCircle size={14} /> Global Store
+                    </div>
+                </div> */}
             </div>
 
             <form
@@ -119,61 +104,102 @@ const CreateCategory = () => {
                     e.stopPropagation();
                     form.handleSubmit();
                 }}
-                className="space-y-6 bg-white border border-slate-100 p-8 rounded-2xl shadow-sm"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-8"
             >
-                <div className="grid grid-cols-1 gap-4">
-                    <form.Field
-                        name="name"
-                        children={(field) => (
-                            <div className="flex flex-col">
-                                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-widest">
-                                    <LayoutGrid size={16} className="text-emerald-600" />
-                                    Category Name
-                                </label>
-                                <input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) => field.handleChange(e.target.value)}
-                                    placeholder="e.g. Organic Fruits"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-all font-medium text-sm"
-                                />
+                {/* Left Side: General Info */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white p-4 rounded-lg border border-slate-100  transition-all ">
+                        <div className="space-y-5">
+                            <form.Field
+                                name="name"
+                                children={(field) => (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                            <LayoutGrid size={16} className="text-slate-400" />
+                                            Category Title
+                                        </label>
+                                        <input
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            placeholder="e.g. Organic Vegetables"
+                                            className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-slate-600 placeholder:text-slate-400"
+                                        />
+                                    </div>
+                                )}
+                            />
+
+                            <form.Field
+                                name="subCategories"
+                                children={(field) => (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                            <Layers size={16} className="text-slate-400" />
+                                            Sub-categories
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            placeholder="Mango, Banana, Pineapple..."
+                                            className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-slate-600 resize-none"
+                                        />
+                                        <p className="text-[11px] text-slate-400 italic font-light tracking-wide">Enter names separated by commas.</p>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Media/Upload */}
+                <div className="space-y-6">
+                    <div className="bg-white p-4 rounded-lg  border border-slate-100 shadow-sm text-center">
+                        <label className="text-sm font-medium text-slate-700 block mb-4 text-left">Category Icon</label>
+                        
+                        <div className="relative group">
+                            <div className="w-full aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-colors group-hover:bg-slate-100/50 group-hover:border-emerald-200">
+                                <AnimatePresence mode="wait">
+                                    {previewUrl ? (
+                                        <motion.div 
+                                            initial={{ opacity: 0 }} 
+                                            animate={{ opacity: 1 }} 
+                                            exit={{ opacity: 0 }}
+                                            className="relative w-full h-full"
+                                        >
+                                            <img src={previewUrl} alt="preview" className="object-cover w-full h-full" />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { setIconFileState(null); setIconUrlState(''); setPreviewUrl(null); }}
+                                                className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-lg text-rose-500 shadow-sm border border-slate-100 hover:bg-white transition-all"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div 
+                                            initial={{ y: 10, opacity: 0 }} 
+                                            animate={{ y: 0, opacity: 1 }}
+                                            className="flex flex-col items-center p-4"
+                                        >
+                                            <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-3">
+                                                <CloudUpload size={24} />
+                                            </div>
+                                            <p className="text-xs text-slate-500 leading-relaxed px-4">Drag an image or paste a link below</p>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        )}
-                    />
+                        </div>
 
-                    <form.Field
-                        name="subCategories"
-                        children={(field) => (
-                            <div className="flex flex-col">
-                                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-widest">
-                                    <Layers size={16} className="text-emerald-600" />
-                                    Subcategories
-                                </label>
-                                <input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) => field.handleChange(e.target.value)}
-                                    placeholder="Comma separated, e.g. Mango, Banana"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-all font-medium text-sm"
-                                />
-                                <p className="text-xs text-slate-400 mt-1">Tip: separate names with commas</p>
-                            </div>
-                        )}
-                    />
-
-                    <div className="flex items-start gap-4">
-                        <div className="flex-1">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-widest">
-                                <ImageIcon size={16} className="text-emerald-600" />
-                                Icon (file or URL)
-                            </label>
-
-                            <div className="mt-2 space-y-2">
-                                <form.Field
-                                    name="iconFile"
-                                    children={(field) => (
+                        <div className="mt-4 space-y-3">
+                            <form.Field
+                                name="iconFile"
+                                children={(field) => (
+                                    <div className="relative">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -183,52 +209,59 @@ const CreateCategory = () => {
                                                 setIconFileState(f || null);
                                                 if (!f) setIconUrlState('');
                                             }}
-                                            className="w-full"
+                                            className="hidden"
+                                            id="icon-upload"
                                         />
-                                    )}
-                                />
+                                        <label htmlFor="icon-upload" className="w-full py-2 px-4 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-200 transition-colors block">
+                                            Choose Local File
+                                        </label>
+                                    </div>
+                                )}
+                            />
+                            
+                            <div className="flex items-center gap-2">
+                                <div className="h-[1px] bg-slate-100 flex-1"></div>
+                                <span className="text-[10px] text-slate-300 font-medium">OR</span>
+                                <div className="h-[1px] bg-slate-100 flex-1"></div>
+                            </div>
 
-                                <form.Field
-                                    name="iconUrl"
-                                    children={(field) => (
+                            <form.Field
+                                name="iconUrl"
+                                children={(field) => (
+                                    <div className="relative">
+                                        <ImageIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
                                             name={field.name}
                                             value={field.state.value}
-                                            onBlur={field.handleBlur}
                                             onChange={(e) => { field.handleChange(e.target.value); setIconUrlState(e.target.value); setIconFileState(null); }}
-                                            placeholder="https://example.com/icon.png"
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-all text-sm"
+                                            placeholder="Image URL"
+                                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-lg outline-none focus:border-emerald-300 transition-all text-[13px]"
                                         />
-                                    )}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="w-36 h-36 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative">
-                            {previewUrl ? (
-                                <>
-                                    <img src={previewUrl} alt="preview" className="object-cover w-full h-full" />
-                                    <button type="button" onClick={() => { form.reset(); setIconFileState(null); setIconUrlState(''); setPreviewUrl(null); }} className="absolute top-1 right-1 bg-white rounded-full p-1 shadow">
-                                        <X size={14} />
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="text-xs text-slate-400">Preview</div>
-                            )}
+                                    </div>
+                                )}
+                            />
                         </div>
                     </div>
-                </div>
 
-                <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full py-3 ${loading ? 'bg-emerald-300' : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-black rounded-lg flex items-center justify-center gap-2 transition-colors uppercase tracking-widest text-sm`}
-                >
-                    <Send size={16} />
-                    {loading ? 'Saving...' : 'Confirm & Save'}
-                </motion.button>
+                    <motion.button
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/10 transition-all ${
+                            loading ? 'bg-slate-100 text-slate-800' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        }`}
+                    >
+                        {loading ? (
+                            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <Send size={18} />
+                                <span className="text-[15px] font-medium tracking-tight">Save Category</span>
+                            </>
+                        )}
+                    </motion.button>
+                </div>
             </form>
         </div>
     );

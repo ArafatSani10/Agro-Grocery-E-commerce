@@ -4,25 +4,40 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
-import { Provider } from 'react-redux'
+import { Provider } from 'react-redux';
 import { store } from "./store/store";
 import { getTotals } from "./store/reducers/cartSlice";
-const root = ReactDOM.createRoot(document.getElementById("root"));
 
+// TanStack Query imports
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+// create query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000,          // 1 second fresh
+      cacheTime: 1000 * 60 * 5, // 5 min cache
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 store.dispatch(getTotals());
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-    <Provider store={store}>
-      <App />
-    </Provider>
-      
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Provider store={store}>
+          <App />
+        </Provider>
+      </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

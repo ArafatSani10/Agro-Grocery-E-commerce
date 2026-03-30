@@ -1,5 +1,9 @@
+
+
+"use client";
+
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Loader2, X, Search, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { Edit2, Trash2, Loader2, Search, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../lib/api';
@@ -9,18 +13,15 @@ const ManageCategory = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Edit Modal States
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [updateLoading, setUpdateLoading] = useState(false);
     const [newIconFile, setNewIconFile] = useState(null);
 
-    // Fetch Categories
     const fetchCategories = async () => {
         try {
-            setLoading(true);
             const res = await api.get('/categories');
-            const finalData = res.data?.data || res.data?.categories || res.data || [];
+            const finalData = res?.data?.data || res?.data?.categories || res?.data || [];
             setCategories(Array.isArray(finalData) ? finalData : []);
         } catch (err) {
             toast.error("Failed to load categories");
@@ -31,22 +32,32 @@ const ManageCategory = () => {
     };
 
     useEffect(() => {
-        fetchCategories();
+        fetchCategories(); 
+        const interval = setInterval(() => {
+            fetchCategories();
+        }, 1000); 
+
+        return () => clearInterval(interval);
     }, []);
 
-    // Delete Category
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this category?")) return;
+
+        const prevCategories = [...categories];
+        setCategories(prev => prev.filter(cat => cat.id !== id));
+
         try {
             await api.delete(`/categories/${id}`);
             toast.success("Category deleted");
-            setCategories(prev => prev.filter(cat => cat.id !== id));
         } catch (err) {
             toast.error("Delete failed");
+            setCategories(prevCategories); 
         }
     };
 
-    // Update Category
+    // ======================
+    // Update Category (Optimistic)
+    // ======================
     const handleUpdate = async (e) => {
         e.preventDefault();
         setUpdateLoading(true);
@@ -55,7 +66,6 @@ const ManageCategory = () => {
             const formData = new FormData();
             formData.append('name', selectedCategory.name);
 
-            // Sub-categories handle (comma separated string to Array of objects)
             if (selectedCategory.subCategoriesRaw) {
                 const subCats = selectedCategory.subCategoriesRaw
                     .split(',')
@@ -64,33 +74,30 @@ const ManageCategory = () => {
                 formData.append('subCategories', JSON.stringify(subCats));
             }
 
-            // Icon logic: New file has priority
             if (newIconFile) {
                 formData.append('icon', newIconFile);
             } else if (selectedCategory.iconUrl) {
                 formData.append('iconUrl', selectedCategory.iconUrl);
             }
 
-            // Backend logic: router.put("/:id")
-            await api.put(`/categories/${selectedCategory.id}`, formData, {
+            const updatedCat = await api.put(`/categories/${selectedCategory.id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+
+            setCategories(prev => prev.map(cat => cat.id === selectedCategory.id ? updatedCat : cat));
 
             toast.success("Category updated!");
             setIsEditModalOpen(false);
             setNewIconFile(null);
-            fetchCategories();
         } catch (err) {
             toast.error(err?.response?.data?.message || "Update failed");
         } finally {
             setUpdateLoading(false);
         }
     };
-
-    const filteredCategories = Array.isArray(categories) 
-        ? categories.filter(cat => cat.name.toLowerCase().includes(searchTerm.toLowerCase()))
-        : [];
-
+const filteredCategories = categories.filter(cat => 
+    cat.name?.toLowerCase().includes(searchTerm?.toLowerCase() || '')
+);
     return (
         <div className="w-full bg-white min-h-screen p-4">
             <Toaster position="top-right" />

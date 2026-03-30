@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Edit2, Trash2, Loader2, X, Search, Image as ImageIcon, UploadCloud, Package, DollarSign } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,14 +9,13 @@ const ManageProducts = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Edit Modal States
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [updateLoading, setUpdateLoading] = useState(false);
     const [newImageFile, setNewImageFile] = useState(null);
 
-    // Fetch Products
-    const fetchProducts = async () => {
+    // Fetch Products Fast
+    const fetchProducts = useCallback(async () => {
         try {
             setLoading(true);
             const res = await api.get('/products');
@@ -28,11 +27,12 @@ const ManageProducts = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
+        // Immediately load products on mount
         fetchProducts();
-    }, []);
+    }, [fetchProducts]);
 
     // Delete Product
     const handleDelete = async (id) => {
@@ -57,9 +57,8 @@ const ManageProducts = () => {
             formData.append('price', selectedProduct.price);
             formData.append('description', selectedProduct.description || '');
 
-            // Image logic: New file has priority
             if (newImageFile) {
-                formData.append('images', newImageFile); // Backend multi-image field name onujayi
+                formData.append('images', newImageFile);
             }
 
             await api.put(`/products/${selectedProduct.id}`, formData, {
@@ -69,7 +68,9 @@ const ManageProducts = () => {
             toast.success("Product updated!");
             setIsEditModalOpen(false);
             setNewImageFile(null);
-            fetchProducts();
+
+            // Optimistic UI: update products immediately
+            setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...selectedProduct, images: newImageFile ? [URL.createObjectURL(newImageFile)] : p.images } : p));
         } catch (err) {
             toast.error(err?.response?.data?.message || "Update failed");
         } finally {
@@ -77,7 +78,7 @@ const ManageProducts = () => {
         }
     };
 
-    const filteredProducts = Array.isArray(products) 
+    const filteredProducts = Array.isArray(products)
         ? products.filter(prod => prod.title.toLowerCase().includes(searchTerm.toLowerCase()))
         : [];
 
@@ -143,10 +144,10 @@ const ManageProducts = () => {
                                     </td>
                                     <td className="px-6 py-3 text-right">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={() => { 
-                                                    setSelectedProduct(prod); 
-                                                    setIsEditModalOpen(true); 
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedProduct(prod);
+                                                    setIsEditModalOpen(true);
                                                 }}
                                                 className="p-2 text-slate-500 hover:text-blue-600 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg"
                                             >
@@ -174,7 +175,7 @@ const ManageProducts = () => {
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                     <Package size={20} className="text-blue-600" /> Edit Product
                                 </h3>
-                                <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+                                <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                             </div>
 
                             <form onSubmit={handleUpdate} className="space-y-4">

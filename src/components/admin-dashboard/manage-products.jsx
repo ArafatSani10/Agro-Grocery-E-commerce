@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Edit2, Trash2, Loader2, X, Search, Image as ImageIcon, UploadCloud, Package, DollarSign } from 'lucide-react';
+import { Edit2, Trash2, Loader2, X, Search, Image as ImageIcon, UploadCloud, Package, DollarSign, Layers } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../lib/api';
@@ -14,7 +14,6 @@ const ManageProducts = () => {
     const [updateLoading, setUpdateLoading] = useState(false);
     const [newImageFile, setNewImageFile] = useState(null);
 
-    // Fetch Products Fast
     const fetchProducts = useCallback(async () => {
         try {
             setLoading(true);
@@ -30,11 +29,9 @@ const ManageProducts = () => {
     }, []);
 
     useEffect(() => {
-        // Immediately load products on mount
         fetchProducts();
     }, [fetchProducts]);
 
-    // Delete Product
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
         try {
@@ -46,7 +43,6 @@ const ManageProducts = () => {
         }
     };
 
-    // Update Product
     const handleUpdate = async (e) => {
         e.preventDefault();
         setUpdateLoading(true);
@@ -55,6 +51,7 @@ const ManageProducts = () => {
             const formData = new FormData();
             formData.append('title', selectedProduct.title);
             formData.append('price', selectedProduct.price);
+            formData.append('quantity', selectedProduct.quantity); // Quantity added
             formData.append('description', selectedProduct.description || '');
 
             if (newImageFile) {
@@ -69,8 +66,11 @@ const ManageProducts = () => {
             setIsEditModalOpen(false);
             setNewImageFile(null);
 
-            // Optimistic UI: update products immediately
-            setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...selectedProduct, images: newImageFile ? [URL.createObjectURL(newImageFile)] : p.images } : p));
+            setProducts(prev => prev.map(p => 
+                p.id === selectedProduct.id 
+                ? { ...p, ...selectedProduct, images: newImageFile ? [URL.createObjectURL(newImageFile)] : p.images } 
+                : p
+            ));
         } catch (err) {
             toast.error(err?.response?.data?.message || "Update failed");
         } finally {
@@ -86,7 +86,6 @@ const ManageProducts = () => {
         <div className="w-full bg-white min-h-screen p-4">
             <Toaster position="top-right" />
 
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-100 pb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Manage Products</h1>
@@ -105,22 +104,22 @@ const ManageProducts = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="border border-slate-200 rounded-lg overflow-hidden bg-white overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Image</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Product Details</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Stock</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Price</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {loading ? (
-                            <tr><td colSpan="4" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-blue-600" size={32} /></td></tr>
+                            <tr><td colSpan="5" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-blue-600" size={32} /></td></tr>
                         ) : filteredProducts.length === 0 ? (
-                            <tr><td colSpan="4" className="py-20 text-center text-slate-400">No products found.</td></tr>
+                            <tr><td colSpan="5" className="py-20 text-center text-slate-400">No products found.</td></tr>
                         ) : (
                             filteredProducts.map((prod) => (
                                 <tr key={prod.id} className="hover:bg-slate-50/50 group">
@@ -139,7 +138,12 @@ const ManageProducts = () => {
                                             <span className="text-[11px] text-slate-400 truncate max-w-[200px]">{prod.description || 'No description'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-3 font-medium text-emerald-600">
+                                    <td className="px-6 py-3">
+                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${prod.quantity > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                            {prod.quantity > 0 ? `${prod.quantity} In Stock` : 'Out of Stock'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-3 font-medium text-slate-700">
                                         ${prod.price}
                                     </td>
                                     <td className="px-6 py-3 text-right">
@@ -165,12 +169,11 @@ const ManageProducts = () => {
                 </table>
             </div>
 
-            {/* Edit Modal */}
             <AnimatePresence>
                 {isEditModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" onClick={() => setIsEditModalOpen(false)} />
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-md p-6 rounded-2xl border border-slate-200 relative z-10 shadow-2xl">
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-md p-6 rounded-2xl border border-slate-200 relative z-10 shadow-2xl overflow-y-auto max-h-[90vh]">
                             <div className="flex justify-between items-center mb-6 border-b pb-3">
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                     <Package size={20} className="text-blue-600" /> Edit Product
@@ -190,17 +193,33 @@ const ManageProducts = () => {
                                     />
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase">Price</label>
-                                    <div className="relative">
-                                        <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="number"
-                                            value={selectedProduct?.price || ''}
-                                            onChange={(e) => setSelectedProduct({ ...selectedProduct, price: e.target.value })}
-                                            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none text-sm"
-                                            required
-                                        />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase">Price ($)</label>
+                                        <div className="relative">
+                                            <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="number"
+                                                value={selectedProduct?.price || ''}
+                                                onChange={(e) => setSelectedProduct({ ...selectedProduct, price: e.target.value })}
+                                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase">Quantity (Stock)</label>
+                                        <div className="relative">
+                                            <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="number"
+                                                value={selectedProduct?.quantity || 0}
+                                                onChange={(e) => setSelectedProduct({ ...selectedProduct, quantity: e.target.value })}
+                                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                                required
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -217,7 +236,7 @@ const ManageProducts = () => {
                                             )}
                                         </div>
                                         <label className="cursor-pointer bg-white px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
-                                            <UploadCloud size={14} /> Replace Image
+                                            <UploadCloud size={14} /> Replace
                                             <input type="file" className="hidden" accept="image/*" onChange={(e) => setNewImageFile(e.target.files[0])} />
                                         </label>
                                     </div>
@@ -226,7 +245,7 @@ const ManageProducts = () => {
                                 <div className="pt-4 flex gap-3">
                                     <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-3 text-slate-500 font-bold text-xs uppercase hover:bg-slate-50 rounded-xl transition-all border border-slate-200">Cancel</button>
                                     <button type="submit" disabled={updateLoading} className="flex-1 py-3 bg-blue-600 text-white font-bold text-xs uppercase rounded-xl hover:bg-blue-700 disabled:bg-blue-300 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-                                        {updateLoading ? <Loader2 size={16} className="animate-spin" /> : 'Update Product'}
+                                        {updateLoading ? <Loader2 size={16} className="animate-spin" /> : 'Update'}
                                     </button>
                                 </div>
                             </form>

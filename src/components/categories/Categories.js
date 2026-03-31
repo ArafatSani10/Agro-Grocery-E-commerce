@@ -45,13 +45,12 @@ function Categories() {
 
         <ul className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6">
           {isLoading ? (
-            // লোডিং অবস্থায় ১২টি স্কেলিটন দেখাবে
             [...Array(12)].map((_, i) => <SkeletonCard key={i} />)
           ) : (
             categories?.map((category, index) => {
               return (
                 <li className="group" key={index}>
-                  <div className="flex h-full w-full border border-gray-100 shadow-sm bg-white p-4 cursor-pointer transition duration-200 ease-linear transform group-hover:shadow-lg">
+                  <div className="flex h-full w-full border border-gray-100  bg-white p-4 cursor-pointer transition duration-200 ease-linear transform ">
                     <div className="flex ">
                       <div className="flex items-center">
                         <div>

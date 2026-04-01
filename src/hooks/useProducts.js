@@ -13,10 +13,9 @@ export const useProducts = (params = {}) => {
   return useQuery({
     queryKey: ["products", category, q],
     queryFn: () => fetchProducts(params),
-    staleTime: 0,
-    gcTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5, 
+    gcTime: 1000 * 60 * 30,   
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
     retry: 1,
   });
 };

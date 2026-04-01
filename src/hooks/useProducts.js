@@ -1,19 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import api from '../lib/api';
+import { useQuery } from "@tanstack/react-query";
+import api from "../lib/api";
 
-const fetchProducts = async () => {
-  const response = await api.get('/products');
+const fetchProducts = async (params = {}) => {
+  const response = await api.get("/products", { params });
   return response.data;
 };
 
-export const useProducts = () => {
+export const useProducts = (params = {}) => {
   return useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    staleTime: 1000 * 60 * 10, 
-    gcTime: 1000 * 60 * 60,   
-    refetchOnWindowFocus: false, 
+    queryKey: ["products", params],
+    queryFn: () => fetchProducts(params),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    retry: 1, 
+    retry: 1,
   });
 };

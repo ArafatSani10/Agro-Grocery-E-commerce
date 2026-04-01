@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Edit2, Trash2, Loader2, X, Search, Image as ImageIcon, UploadCloud, Package, DollarSign, Layers } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { DollarSign, Edit2, Image as ImageIcon, Layers, Loader2, Package, Search, Trash2, UploadCloud, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../lib/api';
 
 const ManageProducts = () => {
@@ -14,11 +14,15 @@ const ManageProducts = () => {
     const [updateLoading, setUpdateLoading] = useState(false);
     const [newImageFile, setNewImageFile] = useState(null);
 
+    const [categories, setCategories] = useState([]);
+    const [editParentId, setEditParentId] = useState('');
+    const [editSubId, setEditSubId] = useState('');
+
     const fetchProducts = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get('/products');
-            const finalData = res.data?.data || res.data?.products || res.data || [];
+            const res = await api.get('/products/admin');
+            const finalData = res?.data || [];
             setProducts(Array.isArray(finalData) ? finalData : []);
         } catch (err) {
             toast.error("Failed to load products");
@@ -31,6 +35,12 @@ const ManageProducts = () => {
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]);
+
+    useEffect(() => {
+        api.get('/categories').then(res => {
+            setCategories(res?.data || []);
+        }).catch(() => {});
+    }, []);
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
@@ -51,8 +61,11 @@ const ManageProducts = () => {
             const formData = new FormData();
             formData.append('title', selectedProduct.title);
             formData.append('price', selectedProduct.price);
-            formData.append('quantity', selectedProduct.quantity); // Quantity added
+            formData.append('quantity', selectedProduct.quantity);
             formData.append('description', selectedProduct.description || '');
+            if (editSubId || editParentId) {
+                formData.append('parentId', editSubId || editParentId);
+            }
 
             if (newImageFile) {
                 formData.append('images', newImageFile);
@@ -151,6 +164,16 @@ const ManageProducts = () => {
                                             <button
                                                 onClick={() => {
                                                     setSelectedProduct(prod);
+                                                    // Pre-select category dropdowns
+                                                    const cat = prod.parentCategory;
+                                                    if (cat?.parentId) {
+                                                        // it's a subcategory
+                                                        setEditParentId(cat.parentId);
+                                                        setEditSubId(prod.parentId);
+                                                    } else {
+                                                        setEditParentId(prod.parentId || '');
+                                                        setEditSubId('');
+                                                    }
                                                     setIsEditModalOpen(true);
                                                 }}
                                                 className="p-2 text-slate-500 hover:text-blue-600 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg"
@@ -222,6 +245,36 @@ const ManageProducts = () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase">Category</label>
+                                    <select
+                                        value={editParentId}
+                                        onChange={(e) => { setEditParentId(e.target.value); setEditSubId(''); }}
+                                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none text-sm appearance-none"
+                                    >
+                                        <option value="">Select category</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {editParentId && (categories.find(c => c.id === editParentId)?.children || []).length > 0 && (
+                                    <div className="space-y-1">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase">Sub Category</label>
+                                        <select
+                                            value={editSubId}
+                                            onChange={(e) => setEditSubId(e.target.value)}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none text-sm appearance-none"
+                                        >
+                                            <option value="">No sub-category (use parent)</option>
+                                            {(categories.find(c => c.id === editParentId)?.children || []).map(sub => (
+                                                <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
                                 <div className="space-y-1">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase block">Product Image</label>

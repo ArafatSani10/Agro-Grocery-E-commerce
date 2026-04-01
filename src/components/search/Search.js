@@ -1,28 +1,26 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
+import { useProducts } from "../../hooks/useProducts";
 import CategoryCard from "../categoryCard/CategoryCard";
+import NotFoundProduct from "../notFoundProduct/NotFoundProduct";
 import ProductList from "../productList/ProductList";
 import SliceCategory from "../sliceCategory/SliceCategory";
-import NotFoundProduct from "../notFoundProduct/NotFoundProduct";
-import { useSelector } from "react-redux";
-import { getProductByParentCategory } from "../../fakeData/Products";
+
 const Search = () => {
-  const { product } = useSelector((state) => state.search);
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get("Category");
+  const query = searchParams.get("query");
+
+  const params = {};
+  if (category) params.category = category;
+  if (query) params.q = query;
+
+  const { data: products = [], isLoading } = useProducts(params);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  const data=getProductByParentCategory("fish & meat")
-console.log(data)
-  //   useEffect(() => {
-
-  //     const value =
-  //       location.search.split("=")[0].includes("?query") === true
-  //         ? getProductByName(location.search.split("=")[1])
-  //         : [];
-  //         setProduct(value);
-  // console.log(value)
-
-  //   }, [location.search]);
 
   return (
     <div className="bg-gray-50">
@@ -33,8 +31,12 @@ console.log(data)
               <CategoryCard />
               <SliceCategory />
 
-              {product.length >= 1 ? (
-                <ProductList data={product} />
+              {isLoading ? (
+                <div className="text-center py-10 text-gray-500">
+                  Loading...
+                </div>
+              ) : products.length >= 1 ? (
+                <ProductList data={products} />
               ) : (
                 <NotFoundProduct />
               )}

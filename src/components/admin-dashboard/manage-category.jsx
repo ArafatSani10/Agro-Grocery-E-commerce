@@ -1,12 +1,9 @@
-
-
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Loader2, Search, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Edit2, Image as ImageIcon, Loader2, Search, Trash2, UploadCloud } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../lib/api';
 
 const ManageCategory = () => {
@@ -21,8 +18,9 @@ const ManageCategory = () => {
 
     const fetchCategories = async () => {
         try {
-            const res = await api.get('/categories');
-            const finalData = res?.data?.data || res?.data?.categories || res?.data || [];
+            const res = await api.get('/categories/admin?limit=100');
+
+            const finalData = res?.data || [];
             setCategories(Array.isArray(finalData) ? finalData : []);
         } catch (err) {
             toast.error("Failed to load categories");
@@ -33,12 +31,7 @@ const ManageCategory = () => {
     };
 
     useEffect(() => {
-        fetchCategories(); 
-        const interval = setInterval(() => {
-            fetchCategories();
-        }, 1000); 
-
-        return () => clearInterval(interval);
+        fetchCategories();
     }, []);
 
     const handleDelete = async (id) => {
@@ -149,8 +142,8 @@ const filteredCategories = categories.filter(cat =>
                                     <td className="px-6 py-3 font-semibold text-slate-700">{cat.name}</td>
                                     <td className="px-6 py-3">
                                         <div className="flex flex-wrap gap-1">
-                                            {cat.subCategories?.length > 0 ? (
-                                                cat.subCategories.slice(0, 3).map((sub, i) => (
+                                            {cat.children?.length > 0 ? (
+                                                cat.children.slice(0, 3).map((sub, i) => (
                                                     <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg border border-slate-200 font-medium">
                                                         {sub.name}
                                                     </span>
@@ -164,7 +157,7 @@ const filteredCategories = categories.filter(cat =>
                                                 onClick={() => { 
                                                     setSelectedCategory({
                                                         ...cat,
-                                                        subCategoriesRaw: cat.subCategories?.map(s => s.name).join(', ') || ''
+                                                        subCategoriesRaw: cat.children?.map(s => s.name).join(', ') || ''
                                                     }); 
                                                     setIsEditModalOpen(true); 
                                                 }}

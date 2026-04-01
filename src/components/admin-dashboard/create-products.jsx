@@ -1,16 +1,15 @@
 
 import { useForm } from '@tanstack/react-form';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Image as ImageIcon, 
-    Tag, 
-    DollarSign, 
-    Layers, 
-    Send, 
-    X, 
-    CloudUpload, 
-    PackagePlus, 
-    FileText 
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    CloudUpload,
+    DollarSign,
+    FileText,
+    Image as ImageIcon,
+    Layers,
+    PackagePlus,
+    Tag,
+    X
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -19,6 +18,8 @@ import api from '../../lib/api';
 const CreateProducts = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
+    const [selectedParentId, setSelectedParentId] = useState('');
+    const [selectedSubId, setSelectedSubId] = useState('');
     const [previewUrl, setPreviewUrl] = useState(null);
     const [imageFileState, setImageFileState] = useState(null);
     const [imageUrlState, setImageUrlState] = useState('');
@@ -29,8 +30,7 @@ const CreateProducts = () => {
         const fetchCategories = async () => {
             try {
                 const res = await api.get('/categories');
-                // Backend structure onujayi data set korun (e.g., res.data.data)
-                setCategories(res.data.data || res.data);
+                setCategories(res.data?.data || res.data || []);
             } catch (err) {
                 console.error("Category fetch error", err);
             }
@@ -38,17 +38,19 @@ const CreateProducts = () => {
         fetchCategories();
     }, []);
 
+    const selectedParent = categories.find(c => c.id === selectedParentId);
+    const subCategories = selectedParent?.children || [];
+
     const form = useForm({
         defaultValues: {
             title: '',
             price: '',
             description: '',
-            parentId: '',
             imageFile: null,
             imageUrl: '',
         },
         onSubmit: async ({ value }) => {
-            if (!value.title || !value.price || !value.parentId) {
+            if (!value.title || !value.price || !selectedParentId) {
                 toast.error('Title, Price, and Category are required');
                 return;
             }
@@ -57,11 +59,12 @@ const CreateProducts = () => {
             formData.append('title', value.title);
             formData.append('price', value.price);
             formData.append('description', value.description);
-            formData.append('parentId', value.parentId);
+            // If a subcategory is selected, link product to subcategory; otherwise link to parent
+            formData.append('parentId', selectedSubId || selectedParentId);
             formData.append('status', 'ACTIVE');
 
             if (value.imageFile instanceof File) {
-                formData.append('images', value.imageFile); // Backend multi-image array chaile 'images' use korun
+                formData.append('images', value.imageFile);
             } else if (value.imageUrl.trim() !== '') {
                 formData.append('imageUrl', value.imageUrl.trim());
             }
@@ -70,9 +73,9 @@ const CreateProducts = () => {
             try {
                 await api.post('/products', formData);
                 toast.success('Product created successfully');
-                
-                // Reset states
                 form.reset();
+                setSelectedParentId('');
+                setSelectedSubId('');
                 setPreviewUrl(null);
                 setImageFileState(null);
                 setImageUrlState('');
@@ -104,7 +107,7 @@ const CreateProducts = () => {
     return (
         <div className="max-w-full mx-auto p-4">
             <Toaster position="top-right" />
-            
+
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Add New Product</h1>
@@ -122,6 +125,8 @@ const CreateProducts = () => {
                 {/* Left Side: Product Info */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-5">
+
+                        {/* Product Title */}
                         <form.Field
                             name="title"
                             children={(field) => (
@@ -140,6 +145,7 @@ const CreateProducts = () => {
                             )}
                         />
 
+                        {/* Price + Category row */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <form.Field
                                 name="price"
@@ -160,29 +166,48 @@ const CreateProducts = () => {
                                 )}
                             />
 
-                            <form.Field
-                                name="parentId"
-                                children={(field) => (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                            <Layers size={16} className="text-emerald-500" /> Category
-                                        </label>
-                                        <select
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
-                                        >
-                                            <option value="">Select Category</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-                            />
+                            {/* Parent Category */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                    <Layers size={16} className="text-emerald-500" /> Category
+                                </label>
+                                <select
+                                    value={selectedParentId}
+                                    onChange={(e) => {
+                                        setSelectedParentId(e.target.value);
+                                        setSelectedSubId('');
+                                    }}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
+                        {/* Sub Category — only shown when selected parent has children */}
+                        {selectedParentId && subCategories.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                    <Layers size={16} className="text-emerald-400" /> Sub Category
+                                    <span className="text-xs font-normal text-slate-400">(optional)</span>
+                                </label>
+                                <select
+                                    value={selectedSubId}
+                                    onChange={(e) => setSelectedSubId(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">No sub-category (use parent)</option>
+                                    {subCategories.map((sub) => (
+                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Description */}
                         <form.Field
                             name="description"
                             children={(field) => (
@@ -207,15 +232,15 @@ const CreateProducts = () => {
                 {/* Right Side: Image Upload & Action */}
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-center">
-                        <label className="text-sm  text-slate-700 block mb-4 text-left font-mono">PRODUCT IMAGE</label>
-                        
+                        <label className="text-sm text-slate-700 block mb-4 text-left font-mono">PRODUCT IMAGE</label>
+
                         <div className="relative group aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden transition-all group-hover:border-emerald-300">
                             <AnimatePresence mode="wait">
                                 {previewUrl ? (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative w-full h-full">
                                         <img src={previewUrl} alt="preview" className="object-cover w-full h-full" />
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={() => { setImageFileState(null); setImageUrlState(''); setPreviewUrl(null); }}
                                             className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg text-rose-500 shadow-md hover:bg-white transition-all"
                                         >
@@ -299,7 +324,7 @@ const CreateProducts = () => {
                         ) : (
                             <>
                                 <PackagePlus size={20} />
-                                <span className="">PUBLISH PRODUCT</span>
+                                <span>PUBLISH PRODUCT</span>
                             </>
                         )}
                     </motion.button>

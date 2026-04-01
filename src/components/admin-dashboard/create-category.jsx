@@ -1,8 +1,8 @@
 
 
 import { useForm } from '@tanstack/react-form';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Image as ImageIcon, Layers, LayoutGrid, Send, X, PlusCircle, CloudUpload } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CloudUpload, Image as ImageIcon, Layers, LayoutGrid, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../../lib/api';
@@ -27,20 +27,12 @@ const CreateCategory = () => {
                 return;
             }
 
-            let subCategoriesPayload = undefined;
-            if (typeof value.subCategories === 'string' && value.subCategories.trim() !== '') {
-                subCategoriesPayload = value.subCategories
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .map((name) => ({ name }));
-            }
+            const subCategoryNames = typeof value.subCategories === 'string' && value.subCategories.trim() !== ''
+                ? value.subCategories.split(',').map((s) => s.trim()).filter(Boolean)
+                : [];
 
             const formData = new FormData();
             formData.append('name', String(value.name || ''));
-            if (subCategoriesPayload !== undefined) {
-                formData.append('subCategories', JSON.stringify(subCategoriesPayload));
-            }
             if (value.iconFile instanceof File) {
                 formData.append('icon', value.iconFile);
             } else if (typeof value.iconUrl === 'string' && value.iconUrl.trim() !== '') {
@@ -49,7 +41,22 @@ const CreateCategory = () => {
 
             setLoading(true);
             try {
-                await api.post('/categories', formData);
+                // Step 1: Create parent category
+                const parentRes = await api.post('/categories', formData);
+                const parentId = parentRes?.data?.id;
+
+                // Step 2: Create each subcategory with parentId
+                if (parentId && subCategoryNames.length > 0) {
+                    await Promise.all(
+                        subCategoryNames.map((name) => {
+                            const subData = new FormData();
+                            subData.append('name', name);
+                            subData.append('parentId', parentId);
+                            return api.post('/categories', subData);
+                        })
+                    );
+                }
+
                 toast.success('Category created successfully');
                 form.reset();
                 setPreviewUrl(null);

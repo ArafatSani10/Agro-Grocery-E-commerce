@@ -1,19 +1,22 @@
-import React from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { Navigation } from "swiper";
 import "swiper/css";
 import "swiper/css/pagination";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper";
-import { CategoriesData } from "../../fakeData/CategoriesData";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useCategories } from "../../hooks/useCategories";
 import { searchAction } from "../../store/reducers/searchSlice";
 function SliceCategory() {
   let navigate = useNavigate();
   const dispatch = useDispatch();
-  const handleClick = (value) => {
-    navigate("/search?Category=" + value);
+  const { data: categories = [] } = useCategories();
 
-    dispatch(searchAction({ value: value, path: "Category" }));
+  // Flatten parent + children into a single slide list
+  const slides = categories.flatMap((cat) => [cat, ...(cat.children || [])]);
+
+  const handleClick = (path) => {
+    navigate("/search?Category=" + path);
+    dispatch(searchAction({ value: path, path: "Category" }));
   };
   return (
     <div className="relative">
@@ -64,7 +67,7 @@ function SliceCategory() {
         modules={[Navigation]}
         className="mySwiper category-slider my-10"
       >
-        {CategoriesData.map((category, index) => {
+        {slides.map((category, index) => {
           return (
             <SwiperSlide key={index} className="group">
               <div
@@ -88,7 +91,9 @@ function SliceCategory() {
                       maxWidth: "100%",
                     }}
                   >
-                    <img src={category.icon} />
+                    {category.iconUrl && (
+                      <img src={category.iconUrl} alt={category.name} />
+                    )}
                   </span>
                 </div>
                 <h3 className="text-xs text-gray-600 mt-2  group-hover:text-emerald-500">

@@ -7,11 +7,14 @@ const fetchProducts = async (params = {}) => {
 };
 
 export const useProducts = (params = {}) => {
+  const category = params.category || null;
+  const q = params.q || null;
+
   return useQuery({
-    queryKey: ["products", params],
+    queryKey: ["products", category, q],
     queryFn: () => fetchProducts(params),
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 60,
+    staleTime: 0,
+    gcTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,

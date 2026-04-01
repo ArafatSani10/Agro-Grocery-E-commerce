@@ -20,7 +20,7 @@ const Search = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [category, query]);
 
   return (
     <div className="bg-gray-50">

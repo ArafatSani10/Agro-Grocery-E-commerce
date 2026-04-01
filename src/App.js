@@ -32,6 +32,7 @@ import CreateCategory from "./components/admin-dashboard/create-category";
 import ManageCategory from "./components/admin-dashboard/manage-category";
 import CreateProducts from "./components/admin-dashboard/create-products";
 import ManageProducts from "./components/admin-dashboard/manage-products";
+import CreateCupon from "./components/admin-dashboard/create-cupon";
 
 function App() {
   let [isOpenRegister, setIsOpenRegister] = useState(false);
@@ -73,7 +74,7 @@ function App() {
           <Route path="manage-products" element={<ManageProducts></ManageProducts>} />
 
 
-          <Route path="cupon-code" element={<div>Manage Cupon Codes</div>} />
+          <Route path="cupon-code" element={<CreateCupon></CreateCupon>} />
           <Route path="users" element={<div>Manage Users</div>} />
         </Route>
 

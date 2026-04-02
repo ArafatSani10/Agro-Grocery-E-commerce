@@ -33,11 +33,12 @@ import ManageCategory from "./components/admin-dashboard/manage-category";
 import CreateProducts from "./components/admin-dashboard/create-products";
 import ManageProducts from "./components/admin-dashboard/manage-products";
 import CreateCupon from "./components/admin-dashboard/create-cupon";
+import ManageCupon from "./components/admin-dashboard/manage-cupon";
 
 function App() {
   let [isOpenRegister, setIsOpenRegister] = useState(false);
   const location = useLocation();
-  
+
   const isAdminPath = location.pathname.startsWith("/admin");
 
   return (
@@ -75,7 +76,7 @@ function App() {
 
 
           <Route path="cupon-code" element={<CreateCupon></CreateCupon>} />
-          <Route path="users" element={<div>Manage Users</div>} />
+          <Route path="manage-cupon" element={<ManageCupon></ManageCupon>} />
         </Route>
 
         <Route path="*" element={<Home />} />

@@ -1,5 +1,3 @@
-
-
 import React, { useEffect } from "react";
 import Categories from "../components/categories/Categories";
 import FastDeliveryCard from "../components/fastDeliveryCard/FastDeliveryCard";
@@ -19,18 +17,25 @@ function Home() {
     <div className="bg-gray-50">
       <div className="min-h-screen">
         <Cart />
+
         <div className="bg-white">
           <div className="mx-auto py-5 max-w-screen-2xl px-3 sm:px-10">
-            <div className="flex flex-col lg:flex-row w-full gap-6 items-stretch">
-              <div className="flex-shrink-0 w-full lg:w-3/5">
+
+            {/* 🔥 MAIN SECTION */}
+            <div className="flex flex-col lg:flex-row gap-6">
+
+              {/* slider */}
+              <div className="w-full lg:w-3/5 h-[320px] lg:h-[360px]">
                 <Slider />
               </div>
-              
-              <div className="w-full hidden lg:flex">
+
+              {/* coupon */}
+              <div className="w-full lg:w-2/5 h-[320px] lg:h-[360px] hidden lg:block">
                 <LatestDiscountCouponCode />
               </div>
+
             </div>
-            
+
             <OrganicProductCard />
           </div>
         </div>

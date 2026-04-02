@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer } from "rsuite";
 import "rsuite/dist/rsuite.min.css";
-import logo from "../../assets/icon/logo-light.svg";
+import logo from "../../assets/icon/logo-color.png";
 import { ResourcesData } from "../../fakeData/ResourcesData";
 import { useCategories } from "../../hooks/useCategories";
 import { searchAction } from "../../store/reducers/searchSlice";
@@ -97,9 +97,8 @@ const SideBar = () => {
                           {category.name}
                         </div>
                         <ChevronRightIcon
-                          className={`${
-                            open ? "rotate-90 transform" : ""
-                          } h-6 w-6 transition duration-700 ease-in-out inline-flex loading-none items-end text-gray-400`}
+                          className={`${open ? "rotate-90 transform" : ""
+                            } h-6 w-6 transition duration-700 ease-in-out inline-flex loading-none items-end text-gray-400`}
                         />
                       </Disclosure.Button>
                       <Disclosure.Panel>

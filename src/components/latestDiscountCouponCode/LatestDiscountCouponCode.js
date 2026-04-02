@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,21 +6,27 @@ import api from "../../lib/api";
 import { useCountDown } from "../../hooks/useCountDown";
 import toast from "react-hot-toast";
 
-const TimerUnit = ({ value, label }) => (
-  <div className="flex flex-col items-center bg-slate-900 text-white rounded-md px-2 py-1 min-w-[38px] shadow-sm">
-    <span className="text-[11px] font-bold leading-none">
-      {value < 10 ? `0${value}` : value}
-    </span>
-    <span className="text-[7px] uppercase font-medium mt-0.5 text-slate-400">{label}</span>
+const TimerUnit = ({ value }) => (
+  <div className="flex items-center justify-center bg-[#f24141] text-white rounded-[4px] w-[32px] h-[26px] font-bold text-[13px]">
+    {value < 10 ? `0${value}` : value}
   </div>
 );
 
-const CouponSkeleton = () => (
-  <div className="mx-4 mb-4 h-24 bg-white rounded-xl border border-slate-100 animate-pulse flex items-center p-3">
-    <div className="w-14 h-14 bg-slate-200 rounded-lg"></div>
-    <div className="ml-3 flex-1 space-y-2">
-      <div className="h-3 bg-slate-200 rounded w-1/2"></div>
-      <div className="h-6 bg-slate-100 rounded w-full"></div>
+const SkeletonCard = () => (
+  <div className="mx-3 mb-2 bg-white rounded-lg border border-gray-100 flex h-[120px] animate-pulse">
+    <div className="flex-[1.8] flex items-center p-3 gap-3">
+      <div className="w-[72px] h-[72px] bg-gray-200 rounded-lg"></div>
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+        <div className="h-3 w-full bg-gray-200 rounded"></div>
+        <div className="flex gap-1 pt-1">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="w-7 h-6 bg-gray-100 rounded"></div>)}
+        </div>
+      </div>
+    </div>
+    <div className="flex-1 bg-gray-50 border-l-2 border-dashed border-gray-100 flex flex-col items-center justify-center p-2">
+      <div className="h-8 w-20 bg-gray-200 rounded-lg"></div>
+      <div className="h-2 w-full bg-gray-100 mt-2 rounded"></div>
     </div>
   </div>
 );
@@ -28,63 +34,69 @@ const CouponSkeleton = () => (
 const CouponCard = ({ data }) => {
   const targetDate = new Date(data.endTime).getTime();
   const [days, hours, minutes, seconds] = useCountDown(targetDate);
-  const isExpired = (days + hours + minutes + seconds) <= 0;
+  const isExpired = days + hours + minutes + seconds <= 0;
+  const [copied, setCopied] = useState(false);
 
-  const copyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    toast.success("Coupon code copied!", { id: "copy-toast" });
+  const copyCode = async (code) => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    toast.success("Copied!", { id: "copy-toast", position: "top-center" });
+    setTimeout(() => setCopied(false), 1200);
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="mx-4 mb-4 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden hover:border-emerald-400 transition-colors duration-300"
-    >
-      <div className="flex items-stretch min-h-[90px]">
-        {/* কুপন ইনফো */}
-        <div className="flex-1 p-3 flex items-center">
-          <div className="w-14 h-14 flex-shrink-0 bg-slate-50 rounded-lg p-1 border border-slate-100">
-            <img src={data.logo} alt="" className="w-full h-full object-contain" />
-          </div>
-
-          <div className="ml-3 flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-red-500 font-black text-lg leading-none">{data.discountPercentage}%</span>
-              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded tracking-tighter ${isExpired ? 'bg-red-50 text-red-400' : 'bg-emerald-50 text-emerald-500'}`}>
-                {isExpired ? 'EXPIRED' : 'ACTIVE'}
-              </span>
-            </div>
-            <h4 className="text-[11px] font-bold text-slate-700 truncate">{data.title}</h4>
-
-            {!isExpired && (
-              <div className="flex gap-1 mt-1.5 items-center">
-                <TimerUnit value={days} label="d" />
-                <TimerUnit value={hours} label="h" />
-                <TimerUnit value={minutes} label="m" />
-                <TimerUnit value={seconds} label="s" />
-              </div>
-            )}
-          </div>
+    <div className="mx-3 mb-2 bg-white rounded-lg border border-gray-100 shadow-sm flex h-[120px] relative overflow-hidden">
+      <div className="flex-[1.8] flex items-center p-3 gap-3">
+        <div className="w-[72px] h-[72px] flex-shrink-0">
+          <img
+            src={data.logo}
+            alt=""
+            className="w-full h-full object-cover rounded-lg border border-gray-50 shadow-sm"
+          />
         </div>
-
-        <div className="bg-slate-50/50 border-l border-dashed border-slate-200 w-24 flex flex-col items-center justify-center p-2 relative">
-          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border border-slate-100 rounded-full"></div>
-          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border border-slate-100 rounded-full"></div>
-
-          <button
-            onClick={() => copyCode(data.couponCode)}
-            className="w-full py-1.5 bg-slate-900 text-white rounded text-[10px] font-bold tracking-tight hover:bg-emerald-600 transition-all active:scale-90"
-          >
-            {data.couponCode}
-          </button>
-          <p className="text-[8px] text-slate-400 mt-2 font-bold uppercase tracking-tighter text-center">
-            Min: ${data.minimumAmount || 0}
-          </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[#f24141] text-lg font-bold">
+              {data.discountPercentage}% <span className="text-[10px] font-medium text-gray-500 italic">Off</span>
+            </span>
+            <span className={`text-[9px] px-2 py-[2px] rounded-full font-medium ${
+              isExpired ? "bg-red-50 text-red-400" : "bg-[#ffe4e4] text-[#f24141]"
+            }`}>
+              {isExpired ? "Inactive" : "Active"}
+            </span>
+          </div>
+          <h3 className="text-[13px] font-bold text-slate-700 truncate mb-1">
+            {data.title}
+          </h3>
+          <div className="flex items-center gap-[4px]">
+            <TimerUnit value={days} />
+            <span className="font-bold text-gray-400">:</span>
+            <TimerUnit value={hours} />
+            <span className="font-bold text-gray-400">:</span>
+            <TimerUnit value={minutes} />
+            <span className="font-bold text-gray-400">:</span>
+            <TimerUnit value={seconds} />
+          </div>
         </div>
       </div>
-    </motion.div>
+      <div className="absolute right-[33.3%] -top-2 w-4 h-4 bg-white rounded-full border border-gray-100 z-10 shadow-inner"></div>
+      <div className="absolute right-[33.3%] -bottom-2 w-4 h-4 bg-white rounded-full border border-gray-100 z-10 shadow-inner"></div>
+      <div className="flex-1 bg-white border-l-2 border-dashed border-gray-100 flex flex-col items-center justify-center p-2 text-center">
+        <button
+          onClick={() => copyCode(data.couponCode)}
+          className={`w-full py-1.5 rounded-lg border-2 border-dashed font-bold text-[12px] transition-all
+          ${copied
+            ? "bg-emerald-500 border-emerald-500 text-white"
+            : "border-[#10b98133] bg-[#f0fdf4] text-[#10b981]"
+          }`}
+        >
+          {copied ? "COPIED" : data.couponCode}
+        </button>
+        <p className="text-[8px] text-gray-400 mt-2 leading-tight font-medium">
+          * This coupon apply when shopping more then <span className="font-bold text-gray-600">${data.minimumAmount || 0}</span>
+        </p>
+      </div>
+    </div>
   );
 };
 
@@ -95,44 +107,44 @@ export default function LatestDiscountCouponCode() {
       const res = await api.get("/coupons");
       const allData = res.data?.data || res.data || [];
       return allData.slice(0, 2);
-    }
+    },
   });
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50 border-2 border-orange-500 rounded-lg shadow-sm transition-all duration-300 group hover:border-emerald-500 overflow-hidden">
-      {/* হেডার */}
-      <div className="bg-orange-100 text-gray-900 px-4 py-3 border-b border-orange-200 flex items-center justify-center">
-        <h3 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-          <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-          Super Discount Coupons
-        </h3>
+    <div className="w-full h-full flex flex-col bg-white border border-orange-100 rounded-lg overflow-hidden shadow-sm">
+      <div className="px-3 py-2 bg-[#fff4e3] border-b border-orange-50">
+        <h2 className="text-[14px] font-semibold text-slate-800 text-center">
+          Latest Super Discount Active Coupon Code
+        </h2>
       </div>
-
-      <div className="flex-1 py-4 flex flex-col justify-start">
+      <div className="flex-1 py-2 bg-gray-50/30 flex flex-col justify-center">
         {isLoading ? (
           <>
-            <CouponSkeleton />
-            <CouponSkeleton />
+            <SkeletonCard />
+            <SkeletonCard />
           </>
         ) : (
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {coupons.length > 0 ? (
-              coupons.map((item) => <CouponCard key={item.id} data={item} />)
+              coupons.map((item) => (
+                <CouponCard key={item._id || item.id} data={item} />
+              ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                <p className="text-xs font-bold uppercase">No Coupons Available</p>
+              <div className="flex flex-col items-center justify-center py-6 opacity-50">
+                 <p className="text-sm font-bold">No Coupon Found</p>
               </div>
             )}
           </AnimatePresence>
         )}
       </div>
-
-      <Link
-        to="/offers"
-        className="bg-white border-t border-slate-100 py-3 text-center text-[10px] font-black text-slate-400 hover:text-emerald-500 transition-all uppercase tracking-[0.2em]"
-      >
-        Explore All Offers
-      </Link>
+      <div className="py-2 flex justify-center bg-white -mt-2">
+        <Link
+          to="/offer"
+          className="text-sm font-bold text-slate-500 hover:text-emerald-500 transition-colors "
+        >
+          Explore All Offers
+        </Link>
+      </div>
     </div>
   );
 }

@@ -85,10 +85,10 @@ const menuItems = [
         path: '/admin/cupon-code' 
     },
     { 
-        id: 'users', 
-        label: 'Users', 
+        id: 'Manage Cupon', 
+        label: 'Manage Cupon', 
         icon: FiUsers, 
-        path: '/admin/users' 
+        path: '/admin/manage-cupon' 
     },
 ];
 

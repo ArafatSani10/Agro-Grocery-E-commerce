@@ -1,10 +1,17 @@
 import { Field, Form, Formik } from "formik";
-import React, { useEffect } from "react";
-import OrderSummary from "../orderSummary/OrderSummary";
-import * as Yup from "yup";
+import { useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector,useDispatch } from "react-redux";
-import randomId from "random-id";
+import * as Yup from "yup";
+import api from "../../lib/api";
+import { authClient } from "../../lib/auth-client";
+import {
+  clearCart,
+  getTotals,
+  setShippingOption,
+} from "../../store/reducers/cartSlice";
+import OrderSummary from "../orderSummary/OrderSummary";
 
 const SignupSchema = Yup.object().shape({
   firstName: Yup.string().required("First Name is required!"),
@@ -20,59 +27,93 @@ const SignupSchema = Yup.object().shape({
   shippingOption: Yup.string().required("Shipping Option is required!"),
   paymentMethod: Yup.string().required("Payment Method is required"),
 });
+
 function Checkout() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  let navigate = useNavigate();
-  var Id = randomId(30,"aA0");
-  var Invoice = randomId(5, "0");
 
-  const { ...item } = useSelector((state) => state.cart);
-    const dispatch = useDispatch();
-  const onchangeSubmit = (value) => {
-    const data = {
-      createdDate: new Date(),
-      updatedDate: new Date(),
-      invoce: Invoice,
-      id: Id,
-      cart: item,
-      ...value,
-    };
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const cart = useSelector((state) => state.cart);
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
-    localStorage.setItem(Id, JSON.stringify(data));
-    setTimeout(() => {
-      navigate("/order/" + Id);
-     
-    }, 2000);
+  useEffect(() => {
+    dispatch(getTotals());
+  }, [cart, dispatch]);
+
+  const onchangeSubmit = async (values, { setSubmitting }) => {
+    try {
+      const payload = {
+        ...values,
+        cart: {
+          cartItems: cart.cartItems.map((item) => ({
+            id: item.id,
+            title: item.title,
+            price: item.price,
+            cartQuantity: item.cartQuantity,
+          })),
+          cartTotalAmount: cart.cartTotalAmount,
+          cartTotalQuantity: cart.cartTotalQuantity,
+        },
+        couponCode: cart.couponCode || null,
+        couponId: cart.couponId || null,
+        shippingCost: cart.shippingCost || 0,
+      };
+
+      const res = await api.post("/orders", payload);
+      const data = res?.data || res;
+
+      // Stripe payment: redirect to Stripe checkout page
+      if (data?.session?.url) {
+        dispatch(clearCart());
+        window.location.href = data.session.url;
+        return;
+      }
+
+      // COD or other: go to order confirmation page
+      const orderId = data?.order?.id || data?.id;
+      if (orderId) {
+        dispatch(clearCart());
+        toast.success("Order placed successfully!");
+        setTimeout(() => navigate("/order/" + orderId), 1000);
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        "Failed to place order. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="bg-gray-50">
+      <Toaster position="top-center" reverseOrder={false} />
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
         <div className="py-10 lg:py-12 px-0 2xl:max-w-screen-2xl w-full xl:max-w-screen-xl flex flex-col md:flex-row lg:flex-row">
           <div className="md:w-full lg:w-3/5 flex h-full flex-col order-2 sm:order-1 lg:order-1">
             <div className="mt-5 md:mt-0 md:col-span-2">
-              
               <Formik
                 initialValues={{
-                  firstName: "samet",
-                  lastName: "kaya",
-                  email: "kaya67380@gmail.com",
-                  phoneNumber: "1235",
-                  streetAddress: "kadıköy",
-                  city: "istanbul",
-                  country: "kadıköy",
-                  zipPostal: "3400",
+                  firstName: user?.name?.split(" ")[0] || "",
+                  lastName: user?.name?.split(" ").slice(1).join(" ") || "",
+                  email: user?.email || "",
+                  phoneNumber: "",
+                  streetAddress: "",
+                  city: "",
+                  country: "",
+                  zipPostal: "",
                   shippingOption: "FedEx",
                   paymentMethod: "COD",
                 }}
+                enableReinitialize
                 validationSchema={SignupSchema}
-                onSubmit={async (values) => {
-                  onchangeSubmit(values);
-                }}
+                onSubmit={onchangeSubmit}
               >
-                {({ errors, touched }) => {
+                {({ errors, touched, isSubmitting, values, setFieldValue }) => {
                   return (
                     <Form>
                       <div>
@@ -310,11 +351,21 @@ function Checkout() {
                                         </p>
                                       </div>
                                     </div>
-                                    <Field
+                                    <input
                                       type="radio"
                                       name="shippingOption"
                                       value="FedEx"
+                                      checked={
+                                        values.shippingOption === "FedEx"
+                                      }
                                       className="form-radio outline-none focus:ring-0 text-emerald-500"
+                                      onChange={() => {
+                                        setFieldValue(
+                                          "shippingOption",
+                                          "FedEx",
+                                        );
+                                        dispatch(setShippingOption("FedEx"));
+                                      }}
                                     />
                                   </div>
                                 </label>
@@ -376,11 +427,16 @@ function Checkout() {
                                         </p>
                                       </div>
                                     </div>
-                                    <Field
+                                    <input
                                       type="radio"
                                       name="shippingOption"
                                       value="UPS"
+                                      checked={values.shippingOption === "UPS"}
                                       className="form-radio outline-none focus:ring-0 text-emerald-500"
+                                      onChange={() => {
+                                        setFieldValue("shippingOption", "UPS");
+                                        dispatch(setShippingOption("UPS"));
+                                      }}
                                     />
                                   </div>
                                 </label>
@@ -400,7 +456,6 @@ function Checkout() {
                         <h2 className="font-semibold  text-base text-gray-700 pb-3">
                           03. Payment Details
                         </h2>
-                        <div className="mb-3">Stripe is Payment</div>
                         <div className="grid grid-cols-6 gap-6">
                           <div className="col-span-6 sm:col-span-3">
                             <div className="px-3 py-4 border border-gray-200 bg-white rounded-md">
@@ -519,12 +574,17 @@ function Checkout() {
                         <div className="col-span-6 sm:col-span-3">
                           <button
                             type="submit"
-                            disabled=""
-                            className="bg-emerald-500 hover:bg-emerald-600 border border-emerald-500 transition-all rounded py-3 text-center text-sm  font-medium text-white flex justify-center w-full"
+                            disabled={isSubmitting}
+                            className="bg-emerald-500 hover:bg-emerald-600 border border-emerald-500 transition-all rounded py-3 text-center text-sm  font-medium text-white flex justify-center w-full disabled:opacity-60"
                           >
-                            Confirm Order{" "}
+                            {isSubmitting
+                              ? values.paymentMethod === "Card"
+                                ? "Redirecting to Stripe..."
+                                : "Placing Order..."
+                              : values.paymentMethod === "Card"
+                                ? "Pay with Stripe →"
+                                : "Confirm Order"}{" "}
                             <span className="text-xl ml-2">
-                              {" "}
                               <svg
                                 stroke="currentColor"
                                 fill="currentColor"

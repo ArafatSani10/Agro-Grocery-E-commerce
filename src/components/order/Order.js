@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
-import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import Logo from "../../assets/icon/logo-color.svg";
 import api from "../../lib/api";
 
@@ -11,6 +11,9 @@ function Order() {
   }, []);
 
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const verifiedRef = useRef(false);
 
   const {
     data: res,
@@ -22,6 +25,20 @@ function Order() {
     enabled: !!id,
     retry: 1,
   });
+
+  // After Stripe redirects back, verify the payment and refresh the order
+  useEffect(() => {
+    const paymentParam = searchParams.get("payment");
+    const sessionId = searchParams.get("session_id");
+
+    if (paymentParam === "success" && sessionId && id && !verifiedRef.current) {
+      verifiedRef.current = true;
+      api
+        .post(`/orders/${id}/verify-payment`, { sessionId })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["order", id] }))
+        .catch((err) => console.error("Payment verification failed:", err));
+    }
+  }, [id, searchParams, queryClient]);
 
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",

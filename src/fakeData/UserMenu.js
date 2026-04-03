@@ -121,6 +121,26 @@ export const UserMenu = [
     icon: (
       <svg
         stroke="currentColor"
+        fill="none"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        className="flex-shrink-0 h-4 w-4"
+        aria-hidden="true"
+        height="1em"
+        width="1em"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+        <line x1="1" y1="10" x2="23" y2="10"></line>
+      </svg>
+    ),
+    title: "Payment History",
+    path: "payment-history",
+  },
+  {
+    icon: (
+      <svg
+        stroke="currentColor"
         fill="currentColor"
         strokeWidth="0"
         viewBox="0 0 512 512"
@@ -166,6 +186,4 @@ export const UserMenu = [
     title: "Change Password",
     path: "change-password",
   },
- 
-    
 ];

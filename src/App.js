@@ -12,6 +12,7 @@ import CreateCupon from "./components/admin-dashboard/create-cupon";
 import CreateProducts from "./components/admin-dashboard/create-products";
 import ManageCategory from "./components/admin-dashboard/manage-category";
 import ManageCupon from "./components/admin-dashboard/manage-cupon";
+import ManageOrders from "./components/admin-dashboard/manage-orders";
 import ManageProducts from "./components/admin-dashboard/manage-products";
 import ChangePassword from "./components/changePassword/ChangePassword";
 import Checkout from "./components/checkout/Checkout";
@@ -25,6 +26,7 @@ import MobileApp from "./components/mobileApp/MobileApp";
 import MyOrders from "./components/myOrders/MyOrders";
 import Navigation from "./components/navigation/Navigation";
 import Order from "./components/order/Order";
+import PaymentHistory from "./components/paymentHistory/PaymentHistory";
 import Product from "./components/product/Product";
 import Register from "./components/register/Register";
 import Search from "./components/search/Search";
@@ -65,6 +67,7 @@ function App() {
         <Route path="user" element={<User />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="my-orders" element={<MyOrders />} />
+          <Route path="payment-history" element={<PaymentHistory />} />
           <Route path="update-profile" element={<UpdateProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
@@ -90,6 +93,7 @@ function App() {
 
           <Route path="cupon-code" element={<CreateCupon></CreateCupon>} />
           <Route path="manage-cupon" element={<ManageCupon></ManageCupon>} />
+          <Route path="manage-orders" element={<ManageOrders />} />
         </Route>
 
         <Route path="*" element={<Home />} />

@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import {
-    FiHome,
-    FiPieChart,
-    FiUsers,
-    FiSettings,
-    FiBell,
-    FiMail,
-    FiCalendar,
     FiBarChart2,
-    FiMenu,
-    FiChevronLeft,
-    FiUser,
-    FiLogOut,
+    FiBell,
+    FiCalendar,
     FiChevronDown,
-    FiSearch
+    FiChevronLeft,
+    FiHome,
+    FiLogOut,
+    FiMenu,
+    FiPieChart,
+    FiSearch,
+    FiSettings,
+    FiUser,
+    FiUsers
 } from 'react-icons/fi';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import logo from "../../assets/icon/logo-color.png";
 
 const AdminLayout = () => {
@@ -89,6 +88,12 @@ const menuItems = [
         label: 'Manage Cupon', 
         icon: FiUsers, 
         path: '/admin/manage-cupon' 
+    },
+    { 
+        id: 'manage-orders', 
+        label: 'Manage Orders', 
+        icon: FiBarChart2, 
+        path: '/admin/manage-orders' 
     },
 ];
 
